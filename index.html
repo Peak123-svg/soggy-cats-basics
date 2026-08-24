@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soggy Cats Basics</title>
+    <style>
+        /* Load your custom Comic Sans font directly from your GitHub repo */
+        @font-face {
+            font-family: 'ComicSans';
+            src: url('https://raw.githubusercontent.com/Peak123-svg/soggy-cats-basics/main/comic-sans-ms.ttf') format('truetype');
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'ComicSans', sans-serif;
+            background-color: #111;
+        }
+
+        /* Main Menu Screen */
+        #menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* Replace with your menu background image filename or raw GitHub link */
+            background: url('dfgdfgfd.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #menu h1 {
+            color: #ffeb3b;
+            font-size: 56px;
+            text-shadow: 4px 4px #000;
+            margin-bottom: 20px;
+        }
+
+        /* Play Button Styling */
+        #play-btn {
+            /* Replace with your normal play button image filename or raw GitHub link */
+            background: url('play.png') no-repeat center;
+            background-size: contain;
+            width: 220px;
+            height: 90px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        #play-btn:hover {
+            /* Replace with your hover play button image filename or raw GitHub link */
+            background: url('play hover.png') no-repeat center;
+            background-size: contain;
+            transform: scale(1.05);
+        }
+
+        /* In-game HUD Counter */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ffffff;
+            font-size: 28px;
+            text-shadow: 2px 2px #000;
+            display: none;
+            z-index: 5;
+        }
+
+        /* Instructions overlay after clicking play */
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            text-shadow: 1px 1px #000;
+            display: none;
+            z-index: 5;
+        }
+    </style>
+
+    <!-- Import Three.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <!-- Main Menu UI -->
+    <div id="menu">
+        <h1>Soggy Cats Basics</h1>
+        <button id="play-btn"></button>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud">Sogcoins: <span id="counter">0</span> / 5</div>
+    <div id="instructions">Use WASD to move, Mouse to look around. Collect all 5 Sogcoins!</div>
+
+    <script>
+        // --- GAME INITIALIZATION ---
+        const playButton = document.getElementById('play-btn');
+        const menuDiv = document.getElementById('menu');
+        const hudDiv = document.getElementById('hud');
+        const instructionsDiv = document.getElementById('instructions');
+
+        playButton.addEventListener('click', () => {
+            // Hide menu and show game elements
+            menuDiv.style.display = 'none';
+            hudDiv.style.display = 'block';
+            instructionsDiv.style.display = 'block';
+
+            // Lock mouse pointer for 3D look controls
+            document.body.requestPointerLock();
+            
+            // Start the Three.js loop
+            initGame();
+        });
+
+        function initGame() {
+            // 1. Scene, Camera, Renderer
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x202020);
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 5); // Player eye-level height
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // 2. Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            // 3. Textures
+            const textureLoader = new THREE.TextureLoader();
+            // UPDATE THESE PATHS to match your exact filenames or raw GitHub image URLs
+            const floorTex = textureLoader.load('20230327_180839.png');
+            const wallTex = textureLoader.load('dfgdfsafagtj.png');
+            const sogcoinTex = textureLoader.load('sogcoin-texture.png');
+
+            floorTex.wrapS = THREE.RepeatWrapping;
+            floorTex.wrapT = THREE.RepeatWrapping;
+            floorTex.repeat.set(10, 10);
+
+            // 4. Build Environment (Floor & Walls)
+            const floorGeo = new THREE.PlaneGeometry(40, 40);
+            const floorMat = new THREE.MeshStandardMaterial({ map: floorTex });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            const wallMat = new THREE.MeshStandardMaterial({ map: wallTex });
+            const wallGeo = new THREE.PlaneGeometry(40, 4);
+
+            // Back wall
+            const backWall = new THREE.Mesh(wallGeo, wallMat);
+            backWall.position.set(0, 2, -20);
+            scene.add(backWall);
+
+            // Front wall
+            const frontWall = new THREE.Mesh(wallGeo, wallMat);
+            frontWall.position.set(0, 2, 20);
+            frontWall.rotation.y = Math.PI;
+            scene.add(frontWall);
+
+            // Left wall
+            const leftWall = new THREE.Mesh(wallGeo, wallMat);
+            leftWall.position.set(-20, 2, 0);
+            leftWall.rotation.y = Math.PI / 2;
+            scene.add(leftWall);
+
+            // Right wall
+            const rightWall = new THREE.Mesh(wallGeo, wallMat);
+            rightWall.position.set(20, 2, 0);
+            rightWall.rotation.y = -Math.PI / 2;
+            scene.add(rightWall);
+
+            // 5. Spawn Sogcoins (Notebooks replacement)
+            let sogcoinsCollected = 0;
+            const sogcoins = [];
+            const coinGeo = new THREE.BoxGeometry(0.6, 0.8, 0.1);
+            const coinMat = new THREE.MeshStandardMaterial({ map: sogcoinTex });
+
+            for (let i = 0; i < 5; i++) {
+                const coin = new THREE.Mesh(coinGeo, coinMat);
+                coin.position.set(
+                    (Math.random() - 0.5) * 30,
+                    0.5,
+                    (Math.random() - 0.5) * 30
+                );
+                scene.add(coin);
+                sogcoins.push(coin);
+            }
+
+            // 6. Player Movement & Controls
+            let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+            let yaw = 0, pitch = 0;
+
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'KeyW') moveForward = true;
+                if (e.code === 'KeyS') moveBackward = true;
+                if (e.code === 'KeyA') moveLeft = true;
+                if (e.code === 'KeyD') moveRight = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'KeyW') moveForward = false;
+                if (e.code === 'KeyS') moveBackward = false;
+                if (e.code === 'KeyA') moveLeft = false;
+                if (e.code === 'KeyD') moveRight = false;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (document.pointerLockElement === document.body) {
+                    yaw -= e.movementX * 0.002;
+                    pitch -= e.movementY * 0.002;
+                    pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+
+                    camera.rotation.order = 'YXZ';
+                    camera.rotation.y = yaw;
+                    camera.rotation.x = pitch;
+                }
+            });
+
+            // 7. Game Loop
+            const clock = new THREE.Clock();
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const delta = clock.getDelta();
+                const speed = 6.0 * delta;
+
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                dir.y = 0;
+                dir.normalize();
+
+                const sideDir = new THREE.Vector3(-dir.z, 0, dir.x);
+
+                if (moveForward) camera.position.addScaledVector(dir, speed);
+                if (moveBackward) camera.position.addScaledVector(dir, -speed);
+                if (moveRight) camera.position.addScaledVector(sideDir, speed);
+                if (moveLeft) camera.position.addScaledVector(sideDir, -speed);
+
+                // Boundary limits so player stays inside room
+                camera.position.x = Math.max(-19, Math.min(19, camera.position.x));
+                camera.position.z = Math.max(-19, Math.min(19, camera.position.z));
+
+                // Sogcoin Collection Logic
+                sogcoins.forEach((coin, index) => {
+                    if (coin && camera.position.distanceTo(coin.position) < 1.2) {
+                        scene.remove(coin);
+                        sogcoins[index] = null;
+                        sogcoinsCollected++;
+                        document.getElementById('counter').innerText = sogcoinsCollected;
+
+                        if (sogcoinsCollected === 5) {
+                            alert('You collected all 5 Sogcoins! You win!');
+                        }
+                    }
+                });
+
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        // Window resizing support
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
